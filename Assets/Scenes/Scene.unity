@@ -664,7 +664,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1420862792}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c947781c8cab44e248a85fcc82c91e6c, type: 3}
+  m_Script: {fileID: 11500000, guid: 227e0f3513bd60d48990327b1231453a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _vertices: []
@@ -705,6 +705,8 @@ MonoBehaviour:
   DISPLAY_GRID: 0
   DISPLAY_NODE_NAME: 0
   DISPLAY_ROAD_WEIGHT: 0
+  DISPLAY_MAIN_ROAD: 0
+  DISPLAY_SECONDARY_ROADS: 0
 --- !u!23 &1420862795
 MeshRenderer:
   m_ObjectHideFlags: 0

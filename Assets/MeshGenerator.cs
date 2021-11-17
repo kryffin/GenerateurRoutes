@@ -40,6 +40,12 @@ public class MeshGenerator : MonoBehaviour
     [Header("Displays roads weight")]
     public bool DISPLAY_ROAD_WEIGHT;
 
+    [Header("Displays Main Road")]
+    public bool DISPLAY_MAIN_ROAD;
+
+    [Header("Displays Secondary Roads")]
+    public bool DISPLAY_SECONDARY_ROADS;
+
     private List<int> GenerateRoad(int type, List<int> ParentRoad = null)
     {
         List<int> Road = new List<int>();
@@ -231,7 +237,7 @@ public class MeshGenerator : MonoBehaviour
         for (int i = 0; i < _vertices.Length; i++)
         {
             if (DISPLAY_NODE_NAME) Handles.Label(_vertices[i] + Vector3.up, i + "");
-            Gizmos.DrawSphere(_vertices[i], .1f);
+            //Gizmos.DrawSphere(_vertices[i], .1f);
         }
 
 
@@ -264,11 +270,15 @@ public class MeshGenerator : MonoBehaviour
             }
         }
 
-        for (int i = 1; i < Roads.Count; i++)
+        if (DISPLAY_SECONDARY_ROADS)
         {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(_vertices[Roads[i][0]], .1f);
+            for (int i = 1; i < Roads.Count; i++)
+            {
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawSphere(_vertices[Roads[i][0]], .1f);
+            }
         }
+        
 
         //List<int> road2 = GenerateRoad(49, 32);
         //for (int i = 0; i < road2.Count - 1; i++)
@@ -287,6 +297,8 @@ public class MeshGenerator : MonoBehaviour
         for (int i = 0; i < Roads.Count; i++)
         {
             if (Roads[i].Count == 0) continue;
+            if (i == 0 && !DISPLAY_MAIN_ROAD) continue;
+            else if (i != 0 && !DISPLAY_SECONDARY_ROADS) continue;
             switch (i)
             {
                 case 0:
