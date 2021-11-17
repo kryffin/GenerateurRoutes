@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 [RequireComponent(typeof(MeshFilter))]
 public class MeshGenerator : MonoBehaviour
@@ -25,6 +26,19 @@ public class MeshGenerator : MonoBehaviour
     public Graphe G;
 
     List<List<int>> Roads;
+    List<Color> RoadColors;
+
+    [Header("Random ?")]
+    public bool RANDOMIZED_TERRAIN = false;
+
+    [Header("Displays mesh grid")]
+    public bool DISPLAY_GRID;
+
+    [Header("Displays nodes id")]
+    public bool DISPLAY_NODE_NAME;
+
+    [Header("Displays roads weight")]
+    public bool DISPLAY_ROAD_WEIGHT;
 
     private List<int> GenerateRoad(int type, List<int> ParentRoad = null)
     {
@@ -108,6 +122,12 @@ public class MeshGenerator : MonoBehaviour
             if (Road.Count > 0)
                 Roads.Add(new List<int>(Road));
         }
+
+        RoadColors = new List<Color>();
+        for (int i = 0; i < Roads.Count-1; i++)
+        {
+            RoadColors.Add(new Color(Random.value, Random.value, Random.value));
+        }
     }
 
     void Start()
@@ -117,7 +137,7 @@ public class MeshGenerator : MonoBehaviour
         GetComponent<MeshFilter>().mesh = _mesh;
 
         CreateShape();
-        UpdateMesh();
+        CreateMesh();
         G.GenerateGraphe(_vertices, XSize, ZSize, Magnitude);
         //GetComponent<RouteGenerator>().InitVertices(_vertices);
         Roads = new List<List<int>>();
@@ -133,7 +153,6 @@ public class MeshGenerator : MonoBehaviour
             }
             nodes.Add(road.ToArray());
         }
-        GetComponent<Bernstein>().nodes = nodes;
     }
 
     void CreateShape()
@@ -144,7 +163,12 @@ public class MeshGenerator : MonoBehaviour
         {
             for (int x = 0; x <= XSize; x++)
             {
-                float y = Mathf.PerlinNoise(x * Variation, z * Variation) * Magnitude;
+                Vector2 offset;
+                if (RANDOMIZED_TERRAIN)
+                    offset = new Vector2(Random.value, Random.value);
+                else
+                    offset = Vector2.zero;
+                float y = Mathf.PerlinNoise(x * Variation + offset.x, z * Variation + offset.y) * Magnitude;
                 _vertices[i] = new Vector3(x, y, z);
 
                 if (y > _maxHeight)
@@ -191,10 +215,8 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-    void UpdateMesh()
+    void CreateMesh()
     {
-        _mesh.Clear();
-
         _mesh.vertices = _vertices;
         _mesh.triangles = _triangles;
         _mesh.colors = _colors;
@@ -208,26 +230,39 @@ public class MeshGenerator : MonoBehaviour
 
         for (int i = 0; i < _vertices.Length; i++)
         {
-            //UnityEditor.Handles.Label(_vertices[i] + Vector3.up, $"{i}");
+            if (DISPLAY_NODE_NAME) Handles.Label(_vertices[i] + Vector3.up, i + "");
             Gizmos.DrawSphere(_vertices[i], .1f);
         }
 
 
-        //for (int i = 0; i < G.adjMatrix.Count; i++)
-        //{
-        //    for (int j = 0; j < G.adjMatrix[i].Count; j++)
-        //    {
+        if (DISPLAY_GRID)
+        {
+            for (int i = 0; i < G.adjMatrix.Count; i++)
+            {
+                for (int j = 0; j < G.adjMatrix[i].Count; j++)
+                {
 
-        //        if (G.adjMatrix[i][j] == 0f) { continue; }
-        //        if (G.adjMatrix[i][j] < Magnitude / 4f)
-        //        {
-        //            if (G.adjMatrix[i][j] > (Magnitude / 4f) * 0.9f)
-        //                Gizmos.color = new Color(1f, 0.5f, 0f);
-        //            Gizmos.DrawLine(G.vertices[i], G.vertices[j]);
-        //            Gizmos.color = Color.white;
-        //        }
-        //    }
-        //}
+                    if (G.adjMatrix[i][j] == 0f) { continue; }
+                    if (G.adjMatrix[i][j] < Magnitude / 4f)
+                    {
+                        GUIStyle style = new GUIStyle();
+                        style.alignment = TextAnchor.MiddleCenter;
+
+                        if (G.adjMatrix[i][j] > (Magnitude / 4f) * 0.9f)
+                        {
+                            Gizmos.color = new Color(1f, 0.5f, 0f);
+                            style.normal.textColor = new Color(1f, 0.5f, 0f);
+                        }
+
+                        if (DISPLAY_ROAD_WEIGHT) Handles.Label((G.vertices[i] + ((G.vertices[j] - G.vertices[i]) / 2f)) + Vector3.up * 0.1f, G.adjMatrix[i][j].ToString("0.00"), style);
+                        //if (DISPLAY_ROAD_WEIGHT) Handles.Label(Vector3.zero, G.adjMatrix[i][j] + "");
+                        Gizmos.DrawLine(G.vertices[i], G.vertices[j]);
+                        Gizmos.color = Color.white;
+                        style.normal.textColor = Color.white;
+                    }
+                }
+            }
+        }
 
         for (int i = 1; i < Roads.Count; i++)
         {
@@ -247,21 +282,26 @@ public class MeshGenerator : MonoBehaviour
         //    Gizmos.DrawLine(G.vertices[road3[i]], G.vertices[road3[i + 1]]);
         //}
 
-        //Gizmos.color = Color.red;
+        Gizmos.color = Color.red;
 
-        //for (int i = 0; i < Roads.Count; i++)
-        //{
-        //    if (Roads[i].Count == 0) continue;
-        //    switch (i)
-        //    {
-        //        case 0: Gizmos.color = Color.red; break;
-        //        default: Gizmos.color = Color.blue; break;
-        //    }
-        //    for (int j = 0; j < Roads[i].Count - 1; j++)
-        //    {
-        //        Gizmos.DrawLine(G.vertices[Roads[i][j]] + Vector3.up * 0.1f, G.vertices[Roads[i][j + 1]] + Vector3.up * 0.1f);
-        //    }
-        //}
+        for (int i = 0; i < Roads.Count; i++)
+        {
+            if (Roads[i].Count == 0) continue;
+            switch (i)
+            {
+                case 0:
+                    Gizmos.color = Color.red;
+                    break;
+
+                default:
+                    Gizmos.color = RoadColors[i-1];
+                    break;
+            }
+            for (int j = 0; j < Roads[i].Count - 1; j++)
+            {
+                Gizmos.DrawLine(G.vertices[Roads[i][j]] + Vector3.up * 0.1f, G.vertices[Roads[i][j + 1]] + Vector3.up * 0.1f);
+            }
+        }
 
     }
 
