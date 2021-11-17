@@ -26,19 +26,6 @@ public class MeshGenerator : MonoBehaviour
 
     List<List<int>> Roads;
 
-
-    public class Graphe
-    {
-        public List<Vector3> vertices;
-        public List<List<float>> adjMatrix;
-
-        public Graphe()
-        {
-            vertices = new List<Vector3>();
-            adjMatrix = new List<List<float>>();
-        }
-    }
-
     private List<int> GenerateRoad(int type, List<int> ParentRoad = null)
     {
         List<int> Road = new List<int>();
@@ -48,7 +35,8 @@ public class MeshGenerator : MonoBehaviour
         {
             for (int i = 0; i < XSize+1; i++)
             {
-                int[] pred = Dijkstra(i);
+                //int[] pred = Dijkstra(i);
+                int[] pred = Dijkstra.Run(i, G, XSize, ZSize);
                 for (int j = (XSize+1) * ZSize; j < (XSize + 1) * (ZSize + 1); j++)
                 {
                     int cursor = j;
@@ -70,7 +58,7 @@ public class MeshGenerator : MonoBehaviour
         else if (type == 2)
         {
             int start = ParentRoad[Random.Range(0, ParentRoad.Count)];
-            int[] pred = Dijkstra(start);
+            int[] pred = Dijkstra.Run(start, G, XSize, ZSize);
             int width = 10;
             for (int i = -width; i <= width; i++)
             {
@@ -106,101 +94,11 @@ public class MeshGenerator : MonoBehaviour
         return Road;
     }
 
-    private void GenerateGraphe()
-    {
-        for (int i = 0; i < _vertices.Length; i++)
-            G.vertices.Add(_vertices[i]);
-
-        // Init at 0
-        for (int i = 0; i < (XSize+1)*(ZSize+1); i++)
-        {
-            G.adjMatrix.Add(new List<float>());
-            for (int j = 0; j < (XSize+1)*(ZSize+1); j++)
-            {
-                G.adjMatrix[G.adjMatrix.Count - 1].Add(0f);
-            }
-        }
-
-        for (int i = 0; i <= XSize; i++)
-        {
-            for (int j = 0; j <= ZSize; j++)
-            {
-                int a = i * (XSize + 1) + j;
-                if (i != XSize)
-                {
-                    int b = (i + 1) * (XSize + 1) + j;
-                    G.adjMatrix[a][b] = Mathf.Abs(_vertices[a].y - _vertices[b].y);
-                    G.adjMatrix[b][a] = Mathf.Abs(_vertices[a].y - _vertices[b].y);
-                }
-                if (j != ZSize)
-                {
-                    int c = i * (XSize + 1) + (j + 1);
-                    G.adjMatrix[a][c] = Mathf.Abs(_vertices[a].y - _vertices[c].y);
-                    G.adjMatrix[c][a] = Mathf.Abs(_vertices[a].y - _vertices[c].y);
-                }
-            }
-        }
-
-        for (int i = 0; i < G.adjMatrix.Count; i++)
-        {
-            for (int j = 0; j < G.adjMatrix[i].Count; j++)
-            {
-                if (G.adjMatrix[i][j] > Magnitude / 4f)
-                    G.adjMatrix[i][j] = 0f;
-            }
-        }
-    }
-
-
-
-    private int[] Dijkstra(int start)
-    {
-        List<int> poids = new List<int>();
-        float[] distance = new float[(XSize+1) * (ZSize+1)];
-        int[] pred = new int[(XSize + 1) * (ZSize + 1)];
-        for (int i = 0; i < (XSize + 1) * (ZSize + 1); ++i)
-        {
-            pred[i] = -1;
-        }
-
-        for (int i = 0; i < (XSize + 1) * (ZSize + 1); ++i)
-        {
-            distance[i] = float.PositiveInfinity;
-        }
-        distance[start] = 0;
-        int cursor = start;
-
-        KeyValuePair<float, int> min;
-        while (poids.Count < (XSize + 1) * (ZSize + 1))
-        {
-            min = new KeyValuePair<float, int> (float.PositiveInfinity, 0 );
-            for (int i = 0; i < (XSize + 1) * (ZSize + 1); ++i)
-            {
-                if (!poids.Contains(i))
-                    if (distance[i] < min.Key) { min = new KeyValuePair<float, int>(distance[i], i); break; }
-            }
-
-            cursor = min.Value;
-            poids.Add(cursor);
-
-            for (int i = 0; i < (XSize + 1) * (ZSize + 1); ++i)
-            {
-                if (!poids.Contains(i) && G.adjMatrix[cursor][i] > 0)
-                {
-                    if (distance[i] > distance[cursor] + G.adjMatrix[cursor][i])
-                    {
-                        distance[i] = distance[cursor] + G.adjMatrix[cursor][i];
-                        pred[i] = cursor;
-                    }
-                }
-            }
-        }
-        return pred;
-    }
+    
 
     public void GenerateRoads(int n)
     {
-        GenerateGraphe();
+        G.GenerateGraphe(_vertices, XSize, ZSize, Magnitude);
         Roads.Clear();
         List<int> Road = GenerateRoad(1);
         Roads.Add(new List<int>(Road));
@@ -220,7 +118,7 @@ public class MeshGenerator : MonoBehaviour
 
         CreateShape();
         UpdateMesh();
-        GenerateGraphe();
+        G.GenerateGraphe(_vertices, XSize, ZSize, Magnitude);
         //GetComponent<RouteGenerator>().InitVertices(_vertices);
         Roads = new List<List<int>>();
         GenerateRoads(10);
